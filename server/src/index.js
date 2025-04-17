@@ -3,10 +3,14 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 const dotenv = require('dotenv');
 const mongoose = require('mongoose');
+const jwt = require('jsonwebtoken');
 
 // Import routes
 const bookingRoutes = require('./routes/bookingRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
+const visitorRoutes = require('./routes/visitorRoutes');
+const statsRoutes = require('./routes/statsRoutes');
+const authRoutes = require('./routes/authRoutes');
 
 // Load environment variables
 dotenv.config();
@@ -17,6 +21,30 @@ const app = express();
 app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+
+// Auth middleware
+const authMiddleware = (req, res, next) => {
+    try {
+        const token = req.header('Authorization')?.replace('Bearer ', '');
+
+        if (!token) {
+            return res.status(401).json({
+                success: false,
+                message: 'No authentication token, access denied'
+            });
+        }
+
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your_jwt_secret_key');
+        req.user = decoded;
+        next();
+    } catch (error) {
+        res.status(401).json({
+            success: false,
+            message: 'Invalid token',
+            error: error.message
+        });
+    }
+};
 
 // Database connection
 mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/amusement-park', {
@@ -29,6 +57,9 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/amusement
 // Routes
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/payments', paymentRoutes);
+app.use('/api/visitors', visitorRoutes);
+app.use('/api/stats', statsRoutes);
+app.use('/api/auth', authRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

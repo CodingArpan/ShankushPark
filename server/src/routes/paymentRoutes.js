@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Razorpay = require('razorpay');
 const Booking = require('../models/Booking');
+const Stats = require('../models/Stats');
 const crypto = require('crypto');
 const emailService = require('../services/emailService');
 
@@ -67,8 +68,17 @@ router.post('/verify-payment', async (req, res) => {
                 { new: true } // Return the updated document
             );
 
-            // Send confirmation email
+            // Update stats and send email
             if (booking) {
+                try {
+                    // Update statistics for reporting
+                    await Stats.updateForBooking(booking);
+                } catch (statsError) {
+                    console.error('Error updating stats:', statsError);
+                    // Continue even if stats update fails
+                }
+
+                // Send confirmation email
                 await emailService.sendBookingConfirmation(booking);
             }
 
