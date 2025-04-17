@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Booking Confirmation - Amusement Park</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+</head>
+
+<body class="bg-neutral-900 text-white">
+    <div class="container mx-auto px-4 py-20">
+        <div class="max-w-2xl mx-auto bg-neutral-800 rounded-xl p-8 border border-neutral-700">
+            <div class="text-center mb-8">
+                <div class="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                </div>
+                <h1 class="text-3xl font-bold mb-2">Booking Confirmed!</h1>
+                <p class="text-gray-400">Your tickets have been successfully booked.</p>
+            </div>
+
+            <div class="space-y-6">
+                <div class="bg-neutral-700 rounded-lg p-6">
+                    <h2 class="text-xl font-bold mb-4">Booking Details</h2>
+                    <div class="space-y-3">
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">Ticket Number:</span>
+                            <span class="font-medium" id="ticket-number"></span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">Name:</span>
+                            <span class="font-medium" id="booking-name"></span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">Email:</span>
+                            <span class="font-medium" id="booking-email"></span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">Visit Date:</span>
+                            <span class="font-medium" id="visit-date"></span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">Ticket Type:</span>
+                            <span class="font-medium" id="ticket-type"></span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">Number of Visitors:</span>
+                            <span class="font-medium" id="visitors-count"></span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">Total Amount:</span>
+                            <span class="font-medium" id="total-amount"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-neutral-700 rounded-lg p-6">
+                    <h2 class="text-xl font-bold mb-4">Important Information</h2>
+                    <ul class="space-y-2 text-gray-300">
+                        <li class="flex items-start">
+                            <svg class="w-5 h-5 text-[#FFD700] mr-2 mt-1" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd"
+                                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                                    clip-rule="evenodd"></path>
+                            </svg>
+                            Please carry a valid government ID for verification at the entrance.
+                        </li>
+                        <li class="flex items-start">
+                            <svg class="w-5 h-5 text-[#FFD700] mr-2 mt-1" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd"
+                                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                                    clip-rule="evenodd"></path>
+                            </svg>
+                            Your tickets have been sent to your email address.
+                        </li>
+                        <li class="flex items-start">
+                            <svg class="w-5 h-5 text-[#FFD700] mr-2 mt-1" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd"
+                                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                                    clip-rule="evenodd"></path>
+                            </svg>
+                            Please arrive at least 30 minutes before your scheduled time.
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="text-center">
+                    <a href="/"
+                        class="inline-block bg-[#0066CC] hover:bg-[#0055AA] text-white font-bold py-3 px-6 rounded-lg transition duration-300">
+                        Back to Home
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async function () {
+            const urlParams = new URLSearchParams(window.location.search);
+            const bookingId = urlParams.get('bookingId');
+
+            if (bookingId) {
+                try {
+                    const response = await fetch(`http://localhost:3000/api/bookings/${bookingId}`);
+                    const data = await response.json();
+
+                    if (data.success) {
+                        const booking = data.data;
+                        document.getElementById('ticket-number').textContent = booking.ticketNumber;
+                        document.getElementById('booking-name').textContent = booking.name;
+                        document.getElementById('booking-email').textContent = booking.email;
+                        document.getElementById('visit-date').textContent = new Date(booking.visitDate).toLocaleDateString();
+                        document.getElementById('ticket-type').textContent = booking.ticketType;
+                        document.getElementById('visitors-count').textContent = booking.numberOfVisitors;
+                        document.getElementById('total-amount').textContent = `₹${booking.totalAmount}`;
+                    }
+                } catch (error) {
+                    console.error('Error fetching booking details:', error);
+                }
+            }
+        });
+    </script>
+</body>
+
+</html>
