@@ -14,20 +14,24 @@ import {
 const RevenueChart = () => {
   const [data, setData] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [year, setYear] = useState(new Date().getFullYear());
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         setIsLoading(true);
+        setError(null);
+
         const response = await axios.get(
-          "http://localhost:3000/api/stats/monthly",
+          `${import.meta.env.VITE_API_URL}api/stats/monthly`,
           {
             params: { year },
+            timeout: 10000, // Add timeout to prevent infinite loading
           }
         );
 
-        if (response.data.success) {
+        if (response.data && response.data.success) {
           // Add months that have no data
           const fullYearData = [];
           const months = [
@@ -74,33 +78,24 @@ const RevenueChart = () => {
           });
 
           setData(fullYearData);
+
+          // Check if there's any revenue data at all
+          const totalRevenue = fullYearData.reduce(
+            (sum, item) => sum + item.total,
+            0
+          );
+          if (totalRevenue === 0) {
+            setError(`No revenue data available for ${year}`);
+          }
+        } else {
+          console.error("Invalid response format:", response.data);
+          setError("Failed to load revenue data");
+          setEmptyData();
         }
       } catch (error) {
         console.error("Error fetching revenue data:", error);
-        // Set empty data
-        const emptyData = [
-          "January",
-          "February",
-          "March",
-          "April",
-          "May",
-          "June",
-          "July",
-          "August",
-          "September",
-          "October",
-          "November",
-          "December",
-        ].map((month, i) => ({
-          name: month,
-          month: i + 1,
-          individual: 0,
-          meal: 0,
-          family: 0,
-          group: 0,
-          total: 0,
-        }));
-        setData(emptyData);
+        setError("Failed to fetch revenue data");
+        setEmptyData();
       } finally {
         setIsLoading(false);
       }
@@ -108,6 +103,33 @@ const RevenueChart = () => {
 
     fetchData();
   }, [year]);
+
+  const setEmptyData = () => {
+    // Set empty data
+    const emptyData = [
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December",
+    ].map((month, i) => ({
+      name: month,
+      month: i + 1,
+      individual: 0,
+      meal: 0,
+      family: 0,
+      group: 0,
+      total: 0,
+    }));
+    setData(emptyData);
+  };
 
   const formatCurrency = (value) => {
     return new Intl.NumberFormat("en-IN", {
@@ -131,7 +153,7 @@ const RevenueChart = () => {
   }
 
   // Get current month to highlight it
-  const currentMonth = new Date().getMonth() + 1; // 1-indexed
+  // const currentMonth = new Date().getMonth() + 1; // 1-indexed
 
   return (
     <div className="h-[300px] w-full">
@@ -144,11 +166,13 @@ const RevenueChart = () => {
           onChange={handleYearChange}
           className="bg-background border border-input rounded-md px-2 py-1 text-sm"
         >
+          <option value={year - 2}>{year - 2}</option>
           <option value={year - 1}>{year - 1}</option>
           <option value={year}>{year}</option>
-          <option value={year + 1}>{year + 1}</option>
         </select>
       </div>
+
+      {error && <div className="text-sm text-red-500 mb-2">{error}</div>}
 
       <ResponsiveContainer width="100%" height="100%">
         <BarChart

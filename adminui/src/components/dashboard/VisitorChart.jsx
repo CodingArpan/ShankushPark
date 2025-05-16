@@ -14,32 +14,36 @@ import { format, parseISO, subDays } from "date-fns";
 const VisitorChart = () => {
   const [data, setData] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         setIsLoading(true);
+        setError(null);
+
         // Calculate date range for the last 7 days
         const endDate = new Date();
         const startDate = subDays(endDate, 6); // Last 7 days including today
 
         const response = await axios.get(
-          `http://localhost:3000/api/stats/daily`,
+          `${import.meta.env.VITE_API_URL}/api/stats/daily`,
           {
             params: {
               startDate: startDate.toISOString().split("T")[0],
               endDate: endDate.toISOString().split("T")[0],
             },
+            timeout: 8000, // Add timeout to prevent infinite loading
           }
         );
 
-        if (response.data.success) {
+        if (response.data && response.data.success) {
           // Transform data for chart
           const chartData = response.data.data.map((stat) => ({
             date: stat.date,
-            visitors: stat.visitorCount,
-            tickets: stat.ticketsSold,
-            revenue: stat.revenue,
+            visitors: stat.visitorCount || 0,
+            tickets: stat.ticketsSold || 0,
+            revenue: stat.revenue || 0,
           }));
 
           // If some days are missing, fill with zeros
@@ -66,20 +70,27 @@ const VisitorChart = () => {
           }
 
           setData(filledData);
+
+          // Check if there's any visitor data
+          const totalVisitors = filledData.reduce(
+            (sum, item) => sum + item.visitors,
+            0
+          );
+          if (totalVisitors === 0) {
+            setError("No visitor data available for the last 7 days");
+          }
+        } else {
+          console.error("Invalid response format:", response.data);
+          setError("Failed to load visitor data");
+          setEmptyData(endDate);
         }
       } catch (error) {
         console.error("Error fetching visitor data:", error);
+        setError("Failed to fetch visitor data");
+
         // Initialize with empty data for the last 7 days
-        const emptyData = [];
-        for (let i = 0; i <= 6; i++) {
-          emptyData.push({
-            date: subDays(new Date(), 6 - i).toISOString(),
-            visitors: 0,
-            tickets: 0,
-            revenue: 0,
-          });
-        }
-        setData(emptyData);
+        const endDate = new Date();
+        setEmptyData(endDate);
       } finally {
         setIsLoading(false);
       }
@@ -87,6 +98,19 @@ const VisitorChart = () => {
 
     fetchData();
   }, []);
+
+  const setEmptyData = (endDate) => {
+    const emptyData = [];
+    for (let i = 0; i <= 6; i++) {
+      emptyData.push({
+        date: subDays(endDate, 6 - i).toISOString(),
+        visitors: 0,
+        tickets: 0,
+        revenue: 0,
+      });
+    }
+    setData(emptyData);
+  };
 
   const formatDate = (dateStr) => {
     if (!dateStr) return "";
@@ -103,7 +127,9 @@ const VisitorChart = () => {
 
   return (
     <div className="h-[300px] w-full">
-      <ResponsiveContainer width="100%" height="100%">
+      {error && <div className="text-sm text-red-500 mb-2">{error}</div>}
+
+      <ResponsiveContainer width="100%" height={error ? "90%" : "100%"}>
         <AreaChart
           data={data}
           margin={{
@@ -117,11 +143,11 @@ const VisitorChart = () => {
           <XAxis
             dataKey="date"
             tickFormatter={formatDate}
-            tick={{ fontSize: 12 }}
+            tick={{ fontSize: 10 }}
           />
-          <YAxis tick={{ fontSize: 12 }} />
+          <YAxis tick={{ fontSize: 10 }} />
           <Tooltip
-            formatter={(value) => [`${value} visitors`, "Visitors"]}
+            formatter={(value) => [`${value}`, "Visitors"]}
             labelFormatter={formatDate}
           />
           <Area

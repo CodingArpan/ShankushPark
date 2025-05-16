@@ -42,7 +42,7 @@ const VerifyVisitor = () => {
       setVerificationResult(null);
 
       const response = await axios.post(
-        "http://localhost:3000/api/visitors/verify",
+        `${import.meta.env.VITE_API_URL}/api/visitors/verify`,
         {
           ticketNumber: ticketNumber.trim(),
           verifiedBy: verifierName.trim(),

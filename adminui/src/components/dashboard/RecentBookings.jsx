@@ -12,7 +12,7 @@ const RecentBookings = () => {
       try {
         setIsLoading(true);
         const response = await axios.get(
-          "http://localhost:3000/api/bookings?limit=5"
+          `${import.meta.env.VITE_API_URL}/api/bookings?limit=5`
         );
 
         if (response.data.success) {

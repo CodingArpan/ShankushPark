@@ -36,7 +36,7 @@ const VisitorList = () => {
     try {
       setIsLoading(true);
       const response = await axios.get(
-        "http://localhost:3000/api/visitors/today"
+        `${import.meta.env.VITE_API_URL}/api/visitors/today`
       );
 
       if (response.data.success) {

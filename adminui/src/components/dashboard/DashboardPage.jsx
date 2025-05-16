@@ -23,17 +23,28 @@ const DashboardPage = () => {
     visitorCount: 0,
   });
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     const fetchTodayStats = async () => {
       try {
         setIsLoading(true);
+        setError(null);
+
         const response = await axios.get(
-          "http://localhost:3000/api/stats/today"
+          `${import.meta.env.VITE_API_URL}/api/stats/today`,
+          { timeout: 10000 } // Add timeout to prevent infinite loading
         );
-        setTodayStats(response.data.data);
+
+        if (response.data && response.data.success) {
+          setTodayStats(response.data.data);
+        } else {
+          console.error("Invalid response format:", response.data);
+          setError("Invalid server response");
+        }
       } catch (error) {
         console.error("Error fetching today stats:", error);
+        setError("Failed to fetch current statistics");
       } finally {
         setIsLoading(false);
       }
@@ -51,6 +62,12 @@ const DashboardPage = () => {
       <div className="flex items-center justify-between">
         <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
       </div>
+
+      {error && (
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+          {error}
+        </div>
+      )}
 
       <Tabs defaultValue="overview" className="space-y-4">
         <TabsList>
@@ -111,28 +128,28 @@ const DashboardPage = () => {
           </div>
         </TabsContent>
 
-        <TabsContent value="analytics" className="space-y-4">
+        <TabsContent value="analytics">
           <Card>
             <CardHeader>
-              <CardTitle>Advanced Analytics</CardTitle>
+              <CardTitle>Analytics</CardTitle>
               <CardDescription>
-                Detailed metrics and performance indicators
+                Detailed visitor and revenue analytics
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <p>Detailed analytics content will be implemented here.</p>
+              <p>Analytics features coming soon.</p>
             </CardContent>
           </Card>
         </TabsContent>
 
-        <TabsContent value="reports" className="space-y-4">
+        <TabsContent value="reports">
           <Card>
             <CardHeader>
               <CardTitle>Reports</CardTitle>
-              <CardDescription>Generate and download reports</CardDescription>
+              <CardDescription>Generate custom reports</CardDescription>
             </CardHeader>
             <CardContent>
-              <p>Reporting functionality will be implemented here.</p>
+              <p>Reporting features coming soon.</p>
             </CardContent>
           </Card>
         </TabsContent>

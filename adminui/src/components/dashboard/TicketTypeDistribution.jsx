@@ -14,47 +14,128 @@ const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042"];
 const TicketTypeDistribution = () => {
   const [data, setData] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [dataType, setDataType] = useState("tickets"); // "tickets" or "revenue"
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         setIsLoading(true);
-        const response = await axios.get(
-          "http://localhost:3000/api/stats/ticket-types"
+        setError(null);
+
+        // Get the current date for setting date range for this month
+        const today = new Date();
+        const firstDayOfMonth = new Date(
+          today.getFullYear(),
+          today.getMonth(),
+          1
+        );
+        const lastDayOfMonth = new Date(
+          today.getFullYear(),
+          today.getMonth() + 1,
+          0
         );
 
-        if (response.data.success) {
+        const response = await axios.get(
+          `${import.meta.env.VITE_API_URL}/api/stats/ticket-types`,
+          {
+            params: {
+              startDate: firstDayOfMonth.toISOString().split("T")[0],
+              endDate: lastDayOfMonth.toISOString().split("T")[0],
+            },
+            timeout: 8000, // Add timeout to prevent infinite loading
+          }
+        );
+
+        if (response.data && response.data.success) {
           const ticketData = response.data.data;
+
+          if (!ticketData) {
+            setError("No ticket data available");
+            setData([]);
+            return;
+          }
+
+          // Check if we have ticket counts
+          const totalTickets =
+            (ticketData.ticketCounts.individual || 0) +
+            (ticketData.ticketCounts.meal || 0) +
+            (ticketData.ticketCounts.family || 0) +
+            (ticketData.ticketCounts.group || 0);
+
+          // Check if we have revenue data
+          const totalRevenue =
+            (ticketData.revenueDistribution.individual || 0) +
+            (ticketData.revenueDistribution.meal || 0) +
+            (ticketData.revenueDistribution.family || 0) +
+            (ticketData.revenueDistribution.group || 0);
+
+          // Decide which data to show based on what's available
+          let useDataType = dataType;
+          if (totalTickets === 0 && totalRevenue > 0) {
+            useDataType = "revenue";
+            setDataType("revenue");
+          } else if (totalTickets > 0) {
+            useDataType = "tickets";
+            setDataType("tickets");
+          }
 
           // Transform data for pie chart
           const chartData = [
             {
               name: "Individual",
-              value: ticketData.ticketCounts.individual,
-              revenue: ticketData.revenueDistribution.individual,
+              value:
+                useDataType === "tickets"
+                  ? ticketData.ticketCounts.individual || 0
+                  : ticketData.revenueDistribution.individual || 0,
+              tickets: ticketData.ticketCounts.individual || 0,
+              revenue: ticketData.revenueDistribution.individual || 0,
             },
             {
               name: "Meal Package",
-              value: ticketData.ticketCounts.meal,
-              revenue: ticketData.revenueDistribution.meal,
+              value:
+                useDataType === "tickets"
+                  ? ticketData.ticketCounts.meal || 0
+                  : ticketData.revenueDistribution.meal || 0,
+              tickets: ticketData.ticketCounts.meal || 0,
+              revenue: ticketData.revenueDistribution.meal || 0,
             },
             {
               name: "Family Pack",
-              value: ticketData.ticketCounts.family,
-              revenue: ticketData.revenueDistribution.family,
+              value:
+                useDataType === "tickets"
+                  ? ticketData.ticketCounts.family || 0
+                  : ticketData.revenueDistribution.family || 0,
+              tickets: ticketData.ticketCounts.family || 0,
+              revenue: ticketData.revenueDistribution.family || 0,
             },
             {
               name: "Group Package",
-              value: ticketData.ticketCounts.group,
-              revenue: ticketData.revenueDistribution.group,
+              value:
+                useDataType === "tickets"
+                  ? ticketData.ticketCounts.group || 0
+                  : ticketData.revenueDistribution.group || 0,
+              tickets: ticketData.ticketCounts.group || 0,
+              revenue: ticketData.revenueDistribution.group || 0,
             },
           ];
 
           // Remove zero values to avoid empty pie segments
-          setData(chartData.filter((item) => item.value > 0));
+          const filteredData = chartData.filter((item) => item.value > 0);
+
+          if (filteredData.length === 0) {
+            setError("No ticket sales data for this month");
+          }
+
+          setData(filteredData);
+        } else {
+          console.error("Invalid response format:", response.data);
+          setError("Error loading ticket distribution data");
+          setData([]);
         }
       } catch (error) {
         console.error("Error fetching ticket distribution data:", error);
+        setError("Failed to fetch ticket distribution data");
         setData([]);
       } finally {
         setIsLoading(false);
@@ -79,7 +160,7 @@ const TicketTypeDistribution = () => {
     innerRadius,
     outerRadius,
     percent,
-    index,
+    
   }) => {
     const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
     const x = cx + radius * Math.cos((-midAngle * Math.PI) / 180);
@@ -107,17 +188,28 @@ const TicketTypeDistribution = () => {
     );
   }
 
+  if (error) {
+    return (
+      <div className="flex justify-center items-center h-[300px] text-muted-foreground">
+        {error}
+      </div>
+    );
+  }
+
   if (data.length === 0) {
     return (
       <div className="flex justify-center items-center h-[300px] text-muted-foreground">
-        No ticket data available
+        No ticket data available for this month
       </div>
     );
   }
 
   return (
     <div className="h-[300px] w-full">
-      <ResponsiveContainer width="100%" height="100%">
+      <div className="text-sm text-muted-foreground mb-2 text-center">
+        {dataType === "tickets" ? "Tickets Sold" : "Revenue Distribution"}
+      </div>
+      <ResponsiveContainer width="100%" height="90%">
         <PieChart>
           <Pie
             data={data}
@@ -138,13 +230,12 @@ const TicketTypeDistribution = () => {
           </Pie>
           <Tooltip
             formatter={(value, name, props) => {
-              if (name === "value") {
-                return [`${value} tickets`, "Count"];
+              const entry = props.payload;
+              if (dataType === "tickets") {
+                return [`${entry.tickets} tickets`, entry.name];
+              } else {
+                return [formatCurrency(entry.revenue), entry.name];
               }
-              if (name === "revenue") {
-                return [formatCurrency(value), "Revenue"];
-              }
-              return [value, name];
             }}
           />
           <Legend />

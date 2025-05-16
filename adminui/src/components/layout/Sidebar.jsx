@@ -35,22 +35,22 @@ const navItems = [
       },
     ],
   },
-  {
-    title: "Bookings",
-    href: "/bookings",
-    icon: <TicketIcon className="w-5 h-5" />,
-  },
-  {
-    title: "Reports",
-    href: "/reports",
-    icon: <BarChart3 className="w-5 h-5" />,
-  },
+  // {
+  //   title: "Bookings",
+  //   href: "/bookings",
+  //   icon: <TicketIcon className="w-5 h-5" />,
+  // },
+  // {
+  //   title: "Reports",
+  //   href: "/reports",
+  //   icon: <BarChart3 className="w-5 h-5" />,
+  // },
 
-  {
-    title: "Settings",
-    href: "/settings",
-    icon: <Settings className="w-5 h-5" />,
-  },
+  // {
+  //   title: "Settings",
+  //   href: "/settings",
+  //   icon: <Settings className="w-5 h-5" />,
+  // },
 ];
 
 const Sidebar = () => {
