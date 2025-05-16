@@ -1,0 +1,80 @@
+name: amusement-park
+
+services:
+  server:
+    build:
+      context: ./server  
+      dockerfile: docker/Dockerfile  # Specify path to Dockerfile relative to context
+    container_name: amusement-park-server
+    restart: unless-stopped
+    expose:
+      - "3000"
+    env_file:
+      - ./.env
+    environment:
+      - NODE_ENV=production
+    networks:
+      - amusement-park-network
+    healthcheck:
+      test: ["CMD", "node", "healthcheck.js"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+
+  adminui:
+    build:
+      context: ./adminui
+      dockerfile: docker/Dockerfile
+    container_name: amusement-park-adminui
+    restart: unless-stopped
+    depends_on:
+      - server
+    expose:
+      - "5000"
+    networks:
+      - amusement-park-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:5000/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+
+  nginx:
+    image: nginx:alpine
+    container_name: amusement-park-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - server
+      - adminui
+    networks:
+      - amusement-park-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:80/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: '0.2'
+          memory: 128M
+
+networks:
+  amusement-park-network:
+    driver: bridge

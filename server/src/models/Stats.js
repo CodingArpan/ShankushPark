@@ -55,11 +55,34 @@ statsSchema.statics.updateForBooking = async function (booking) {
     stats.visitorCount += booking.numberOfVisitors;
     stats.revenue += booking.totalAmount;
 
-    // Update ticket type stats
-    const ticketTypeKey = booking.ticketType.toLowerCase().replace(/\s+/g, '').replace(/\+/g, '');
-    if (stats.ticketTypes[ticketTypeKey]) {
+    // Map booking ticket types to stats ticket types
+    const ticketTypeMap = {
+        'Individual Entry': 'individual',
+        'Entry + Meal Package': 'meal',
+        'Family Pack': 'family',
+        'Group Package': 'group'
+    };
+
+    // Get the correct key for this ticket type
+    const ticketTypeKey = ticketTypeMap[booking.ticketType];
+
+    // If we have a valid mapping, update the stats
+    if (ticketTypeKey && stats.ticketTypes[ticketTypeKey]) {
         stats.ticketTypes[ticketTypeKey].count += 1;
         stats.ticketTypes[ticketTypeKey].revenue += booking.totalAmount;
+    } else {
+        // Log for debugging if we get an unexpected ticket type
+        console.warn(`Unknown ticket type: ${booking.ticketType}, using fallback normalization`);
+
+        // Fallback to the previous normalization method
+        const fallbackKey = booking.ticketType.toLowerCase().replace(/\s+/g, '').replace(/\+/g, '');
+        if (stats.ticketTypes[fallbackKey]) {
+            stats.ticketTypes[fallbackKey].count += 1;
+            stats.ticketTypes[fallbackKey].revenue += booking.totalAmount;
+        } else {
+            // If we still can't map it, log an error
+            console.error(`Unable to map ticket type: ${booking.ticketType} to any stats category`);
+        }
     }
 
     return stats.save();

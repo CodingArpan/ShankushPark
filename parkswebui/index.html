@@ -1387,7 +1387,7 @@
 
                   try {
                     // Create booking
-                    const bookingResponse = await fetch('http://localhost:3000/api/bookings', {
+                    const bookingResponse = await fetch('http://localhost/api/bookings', {
                       method: 'POST',
                       headers: {
                         'Content-Type': 'application/json',
@@ -1418,7 +1418,7 @@
                     const bookingId = bookingData.data._id;
 
                     // Create Razorpay order
-                    const orderResponse = await fetch('http://localhost:3000/api/payments/create-order', {
+                    const orderResponse = await fetch('http://localhost/api/payments/create-order', {
                       method: 'POST',
                       headers: {
                         'Content-Type': 'application/json',
@@ -1445,7 +1445,7 @@
                       order_id: orderData.order.id,
                       handler: async function (response) {
                         // Verify payment
-                        const verifyResponse = await fetch('http://localhost:3000/api/payments/verify-payment', {
+                        const verifyResponse = await fetch('http://localhost/api/payments/verify-payment', {
                           method: 'POST',
                           headers: {
                             'Content-Type': 'application/json',
@@ -1462,7 +1462,7 @@
 
                         if (verifyData.success) {
                           // Redirect to success page
-                          window.location.href = `/success.html?bookingId=${bookingId}`;
+                          window.location.href = `https://park-tickit-confirmation-page.netlify.app/?bookingId=${bookingId}`;
                         } else {
                           alert('Payment verification failed. Please try again.');
                         }

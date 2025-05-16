@@ -88,7 +88,7 @@
                 </div>
 
                 <div class="text-center">
-                    <a href="/"
+                    <a href="https://smart-amusement-park-cp-2.netlify.app/"
                         class="inline-block bg-[#0066CC] hover:bg-[#0055AA] text-white font-bold py-3 px-6 rounded-lg transition duration-300">
                         Back to Home
                     </a>
@@ -104,7 +104,7 @@
 
             if (bookingId) {
                 try {
-                    const response = await fetch(`http://localhost:3000/api/bookings/${bookingId}`);
+                    const response = await fetch(`http://localhost/api/bookings/${bookingId}`);
                     const data = await response.json();
 
                     if (data.success) {

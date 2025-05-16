@@ -18,7 +18,20 @@ dotenv.config();
 const app = express();
 
 // Middleware
-app.use(cors());
+app.use(cors({
+    origin: [
+        'https://smart-amusement-park-cp-2.netlify.app',
+        'http://localhost:3000',
+        'http://localhost',
+        'http://127.0.0.1:5500',
+        'https://park-tickit-confirmation-page.netlify.app'
+
+
+    ],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    credentials: true,
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+}));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
@@ -60,6 +73,10 @@ app.use('/api/payments', paymentRoutes);
 app.use('/api/visitors', visitorRoutes);
 app.use('/api/stats', statsRoutes);
 app.use('/api/auth', authRoutes);
+
+app.get('/api/health', (req, res) => {
+    res.status(200).json({ status: 'ok', timestamp: new Date() });
+});
 
 // Error handling middleware
 app.use((err, req, res, next) => {

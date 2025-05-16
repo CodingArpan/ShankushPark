@@ -13,6 +13,15 @@ router.get('/daily', async (req, res) => {
         if (startDate && endDate) {
             start = new Date(startDate);
             end = new Date(endDate);
+
+            // Validate dates
+            if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Invalid date parameters'
+                });
+            }
+
             end.setHours(23, 59, 59, 999);
         } else {
             // Default to last 7 days
@@ -31,9 +40,10 @@ router.get('/daily', async (req, res) => {
 
         res.status(200).json({
             success: true,
-            data: stats
+            data: stats || []
         });
     } catch (error) {
+        console.error('Error fetching daily stats:', error);
         res.status(500).json({
             success: false,
             message: 'Error fetching daily stats',
@@ -106,7 +116,15 @@ router.get('/weekly', async (req, res) => {
 router.get('/monthly', async (req, res) => {
     try {
         const { year } = req.query;
-        const selectedYear = year || new Date().getFullYear();
+        const selectedYear = year ? parseInt(year, 10) : new Date().getFullYear();
+
+        // Validate year
+        if (isNaN(selectedYear) || selectedYear < 2000 || selectedYear > 2100) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid year parameter'
+            });
+        }
 
         const startOfYear = new Date(selectedYear, 0, 1);
         const endOfYear = new Date(selectedYear, 11, 31, 23, 59, 59, 999);
@@ -171,6 +189,7 @@ router.get('/monthly', async (req, res) => {
             data: mappedStats
         });
     } catch (error) {
+        console.error('Error fetching monthly stats:', error);
         res.status(500).json({
             success: false,
             message: 'Error fetching monthly stats',
@@ -181,6 +200,148 @@ router.get('/monthly', async (req, res) => {
 
 // Get ticket type distribution
 router.get('/ticket-types', async (req, res) => {
+    // try {
+    //     const { startDate, endDate } = req.query;
+    //     let start, end;
+
+    //     if (startDate && endDate) {
+    //         start = new Date(startDate);
+    //         end = new Date(endDate);
+
+    //         // Validate dates
+    //         if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+    //             return res.status(400).json({
+    //                 success: false,
+    //                 message: 'Invalid date parameters'
+    //             });
+    //         }
+
+    //         end.setHours(23, 59, 59, 999);
+    //     } else {
+    //         // Default to current month
+    //         const today = new Date();
+    //         start = new Date(today.getFullYear(), today.getMonth(), 1);
+    //         end = new Date(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59, 999);
+    //     }
+
+    //     // Get booking data for this date range to ensure proper distribution
+    //     const bookings = await Booking.find({
+    //         visitDate: {
+    //             $gte: start,
+    //             $lte: end
+    //         },
+    //         paymentStatus: 'completed'
+    //     });
+
+    //     // Calculate ticket distribution from bookings
+    //     const bookingDistribution = {
+    //         individual: { count: 0, revenue: 0 },
+    //         meal: { count: 0, revenue: 0 },
+    //         family: { count: 0, revenue: 0 },
+    //         group: { count: 0, revenue: 0 }
+    //     };
+
+    //     let totalBookingRevenue = 0;
+
+    //     // Map from ticket type names to distribution keys
+    //     const ticketTypeMap = {
+    //         'Individual Entry': 'individual',
+    //         'Entry + Meal Package': 'meal',
+    //         'Family Pack': 'family',
+    //         'Group Package': 'group'
+    //     };
+
+    //     // Process each booking to get accurate distribution
+    //     for (const booking of bookings) {
+    //         const key = ticketTypeMap[booking.ticketType];
+    //         if (key && bookingDistribution[key]) {
+    //             bookingDistribution[key].count += 1;
+    //             bookingDistribution[key].revenue += booking.totalAmount;
+    //             totalBookingRevenue += booking.totalAmount;
+    //         }
+    //     }
+
+    //     // Get stats data to get total revenue (in case there are discrepancies)
+    //     const stats = await Stats.aggregate([
+    //         {
+    //             $match: {
+    //                 date: {
+    //                     $gte: start,
+    //                     $lte: end
+    //                 }
+    //             }
+    //         },
+    //         {
+    //             $group: {
+    //                 _id: null,
+    //                 individual: { $sum: "$ticketTypes.individual.count" },
+    //                 meal: { $sum: "$ticketTypes.meal.count" },
+    //                 family: { $sum: "$ticketTypes.family.count" },
+    //                 group: { $sum: "$ticketTypes.group.count" },
+    //                 totalRevenue: { $sum: "$revenue" },
+    //                 individualRevenue: { $sum: "$ticketTypes.individual.revenue" },
+    //                 mealRevenue: { $sum: "$ticketTypes.meal.revenue" },
+    //                 familyRevenue: { $sum: "$ticketTypes.family.revenue" },
+    //                 groupRevenue: { $sum: "$ticketTypes.group.revenue" }
+    //             }
+    //         },
+    //         {
+    //             $project: {
+    //                 _id: 0,
+    //                 ticketCounts: {
+    //                     individual: "$individual",
+    //                     meal: "$meal",
+    //                     family: "$family",
+    //                     group: "$group"
+    //                 },
+    //                 totalRevenue: 1,
+    //                 revenueDistribution: {
+    //                     individual: "$individualRevenue",
+    //                     meal: "$mealRevenue",
+    //                     family: "$familyRevenue",
+    //                     group: "$groupRevenue"
+    //                 }
+    //             }
+    //         }
+    //     ]);
+
+    //     // FORCE REVENUE DISTRIBUTION - HACK FOR DEMO
+    //     // This ensures we always have all 4 ticket types with revenue
+    //     const responseData = {
+    //         ticketCounts: {
+    //             individual: 5,
+    //             meal: 3,
+    //             family: 2,
+    //             group: 1
+    //         },
+    //         totalRevenue: stats.length > 0 ? stats[0].totalRevenue : 10107,
+    //         revenueDistribution: {
+    //             individual: 0,
+    //             meal: 0,
+    //             family: 0,
+    //             group: 0
+    //         }
+    //     };
+
+    //     // Distribute total revenue evenly
+    //     responseData.revenueDistribution.individual = Math.round(responseData.totalRevenue * 0.3); // 30%
+    //     responseData.revenueDistribution.meal = Math.round(responseData.totalRevenue * 0.25); // 25%
+    //     responseData.revenueDistribution.family = Math.round(responseData.totalRevenue * 0.25); // 25%
+    //     responseData.revenueDistribution.group = Math.round(responseData.totalRevenue * 0.2); // 20%
+
+    //     res.status(200).json({
+    //         success: true,
+    //         data: responseData
+    //     });
+    // } catch (error) {
+    //     console.error('Error fetching ticket type distribution:', error);
+    //     res.status(500).json({
+    //         success: false,
+    //         message: 'Error fetching ticket type distribution',
+    //         error: error.message
+    //     });
+    // }
+
     try {
         const { startDate, endDate } = req.query;
         let start, end;
@@ -188,6 +349,15 @@ router.get('/ticket-types', async (req, res) => {
         if (startDate && endDate) {
             start = new Date(startDate);
             end = new Date(endDate);
+
+            // Validate dates
+            if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Invalid date parameters'
+                });
+            }
+
             end.setHours(23, 59, 59, 999);
         } else {
             // Default to current month
@@ -196,6 +366,44 @@ router.get('/ticket-types', async (req, res) => {
             end = new Date(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59, 999);
         }
 
+        // Get booking data for this date range to ensure proper distribution
+        const bookings = await Booking.find({
+            visitDate: {
+                $gte: start,
+                $lte: end
+            },
+            paymentStatus: 'completed'
+        });
+
+        // Calculate ticket distribution from actual bookings
+        const bookingDistribution = {
+            individual: { count: 0, revenue: 0 },
+            meal: { count: 0, revenue: 0 },
+            family: { count: 0, revenue: 0 },
+            group: { count: 0, revenue: 0 }
+        };
+
+        let totalBookingRevenue = 0;
+
+        // Map from ticket type names to distribution keys
+        const ticketTypeMap = {
+            'Individual Entry': 'individual',
+            'Entry + Meal Package': 'meal',
+            'Family Pack': 'family',
+            'Group Package': 'group'
+        };
+
+        // Process each booking to get accurate distribution
+        for (const booking of bookings) {
+            const key = ticketTypeMap[booking.ticketType];
+            if (key && bookingDistribution[key]) {
+                bookingDistribution[key].count += 1;
+                bookingDistribution[key].revenue += booking.totalAmount;
+                totalBookingRevenue += booking.totalAmount;
+            }
+        }
+
+        // Get stats data as a backup for any missing data
         const stats = await Stats.aggregate([
             {
                 $match: {
@@ -239,15 +447,47 @@ router.get('/ticket-types', async (req, res) => {
             }
         ]);
 
+        // Create response using actual booking data
+        const responseData = {
+            ticketCounts: {
+                individual: bookingDistribution.individual.count,
+                meal: bookingDistribution.meal.count,
+                family: bookingDistribution.family.count,
+                group: bookingDistribution.group.count
+            },
+            totalRevenue: totalBookingRevenue,
+            revenueDistribution: {
+                individual: bookingDistribution.individual.revenue,
+                meal: bookingDistribution.meal.revenue,
+                family: bookingDistribution.family.revenue,
+                group: bookingDistribution.group.revenue
+            }
+        };
+
+        // If we have Stats data, use it to supplement missing information
+        if (stats.length > 0) {
+            // If we have no bookings data, use stats data instead
+            if (totalBookingRevenue === 0) {
+                responseData.totalRevenue = stats[0].totalRevenue || 0;
+
+                // Use stats distribution if available
+                if (stats[0].revenueDistribution) {
+                    responseData.revenueDistribution = stats[0].revenueDistribution;
+                }
+
+                // Use stats ticket counts if available
+                if (stats[0].ticketCounts) {
+                    responseData.ticketCounts = stats[0].ticketCounts;
+                }
+            }
+        }
+
         res.status(200).json({
             success: true,
-            data: stats[0] || {
-                ticketCounts: { individual: 0, meal: 0, family: 0, group: 0 },
-                totalRevenue: 0,
-                revenueDistribution: { individual: 0, meal: 0, family: 0, group: 0 }
-            }
+            data: responseData
         });
     } catch (error) {
+        console.error('Error fetching ticket type distribution:', error);
         res.status(500).json({
             success: false,
             message: 'Error fetching ticket type distribution',
@@ -266,7 +506,31 @@ router.get('/today', async (req, res) => {
         tomorrow.setDate(tomorrow.getDate() + 1);
 
         // Get today's stats
-        const todayStats = await Stats.findOne({ date: today });
+        let todayStats = await Stats.findOne({ date: today });
+
+        // If no stats exist for today, create a default object
+        if (!todayStats) {
+            todayStats = new Stats({
+                date: today,
+                visitorCount: 0,
+                ticketsSold: 0,
+                revenue: 0,
+                ticketTypes: {
+                    individual: { count: 0, revenue: 0 },
+                    meal: { count: 0, revenue: 0 },
+                    family: { count: 0, revenue: 0 },
+                    group: { count: 0, revenue: 0 }
+                }
+            });
+
+            try {
+                await todayStats.save();
+                console.log('Created new stats record for today');
+            } catch (saveError) {
+                console.error('Failed to create stats for today:', saveError);
+                // Continue with default values even if save fails
+            }
+        }
 
         // Get current visitors in the park
         const currentVisitors = await VisitorEntry.countDocuments({
@@ -294,14 +558,15 @@ router.get('/today', async (req, res) => {
             success: true,
             data: {
                 date: today,
-                currentVisitorsInPark: currentVisitors,
+                currentVisitorsInPark: currentVisitors || 0,
                 expectedVisitors: expectedVisitors.length > 0 ? expectedVisitors[0].totalExpected : 0,
-                ticketsSold: todayStats ? todayStats.ticketsSold : 0,
-                revenue: todayStats ? todayStats.revenue : 0,
-                visitorCount: todayStats ? todayStats.visitorCount : 0
+                ticketsSold: todayStats.ticketsSold || 0,
+                revenue: todayStats.revenue || 0,
+                visitorCount: todayStats.visitorCount || 0
             }
         });
     } catch (error) {
+        console.error('Error fetching today\'s summary:', error);
         res.status(500).json({
             success: false,
             message: 'Error fetching today\'s summary',
