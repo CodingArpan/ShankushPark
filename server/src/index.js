@@ -20,13 +20,9 @@ const app = express();
 // Middleware
 app.use(cors({
     origin: [
-        'https://smart-amusement-park-cp-2.netlify.app',
         'http://localhost:3000',
         'http://localhost',
         'http://127.0.0.1:5500',
-        'https://park-tickit-confirmation-page.netlify.app'
-
-
     ],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     credentials: true,

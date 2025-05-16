@@ -50,6 +50,54 @@ services:
         limits:
           cpus: '0.5'
           memory: 512M
+  
+  webui:
+    build:
+      context: ./parkswebui
+      dockerfile: Dockerfile
+    container_name: amusement-park-webui
+    restart: unless-stopped
+    depends_on:
+      - server
+    expose:
+      - "4000"
+    networks:
+      - amusement-park-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:4000/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+          
+  ticketconfirmation:
+    build:
+      context: ./sucesshtml
+      dockerfile: Dockerfile
+    container_name: amusement-park-successui
+    restart: unless-stopped
+    depends_on:
+      - server
+    expose:
+      - "8000"
+    networks:
+      - amusement-park-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8000/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: '0.3'
+          memory: 256M
 
   nginx:
     image: nginx:alpine
@@ -62,6 +110,8 @@ services:
     depends_on:
       - server
       - adminui
+      - webui
+      - ticketconfirmation
     networks:
       - amusement-park-network
     healthcheck:
