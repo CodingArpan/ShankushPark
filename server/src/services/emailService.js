@@ -8,7 +8,11 @@ const transporter = nodemailer.createTransport({
     auth: {
         user: process.env.EMAIL_USER || 'trashquery@gmail.com',
         pass: process.env.EMAIL_PASSWORD || 'wtaa xzmb iyjb iloy'
-    }
+    },
+    tls: {
+        rejectUnauthorized: false    // optional: bypass self-signed certs
+    },
+    connectionTimeout: 10000       // optional: increase timeout (10s)
 });
 
 const sendBookingConfirmation = async (booking) => {
