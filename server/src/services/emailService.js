@@ -3,7 +3,7 @@ const nodemailer = require('nodemailer');
 const transporter = nodemailer.createTransport({
     service: "Gmail",
     host: "smtp.gmail.com",
-    port: 465,
+    port: 587,
     secure: true,
     auth: {
         user: process.env.EMAIL_USER || 'trashquery@gmail.com',
@@ -12,7 +12,9 @@ const transporter = nodemailer.createTransport({
     tls: {
         rejectUnauthorized: false    // optional: bypass self-signed certs
     },
-    connectionTimeout: 10000       // optional: increase timeout (10s)
+    connectionTimeout: 10000,
+    debug: true, // Enable debugging
+    logger: true // Enable logging       // optional: increase timeout (10s)
 });
 
 const sendBookingConfirmation = async (booking) => {
